@@ -1,0 +1,88 @@
+version: "3.8"
+
+services:
+  chatbot-db:
+    image: mongo:latest
+    container_name: chatbot-db
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.2  # IP fija para MongoDB
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: chatbot-db
+      ME_CONFIG_BASICAUTH: "false"
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.3  # IP fija para Mongo Express
+    depends_on:
+      - chatbot-db
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ia-model
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.4  # IP fija para Ollama
+    environment:
+      - OLLAMA_NUM_THREADS=6  # Usa más hilos si tu CPU lo permite
+      - OLLAMA_MAX_LOADED_MODELS=1  # Evita cargar múltiples modelos en RAM
+    entrypoint: >
+      /bin/sh -c "
+      ollama serve & sleep 2;
+      if ! ollama list | grep -q 'gemma2:2b'; then
+        echo 'Descargando gemma2:2b...';
+        ollama pull gemma2:2b;
+      fi;
+      tail -f /dev/null"
+
+  chatbot-core-bff:
+    build: .
+    container_name: chatbot-core-bff
+    ports:
+      - "3000:3000"
+    depends_on:
+      - chatbot-db
+      - ollama
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.5  # IP fija para el Backend
+    env_file:
+      - .env
+
+  chatbot-redis:
+    image: redis:latest
+    container_name: chatbot-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.6  # IP fija para Redis
+    volumes:
+      - redis_data:/data
+
+volumes:
+  mongodb_data:
+  ollama_data:
+  redis_data:
+
+networks:
+  chatbot-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.19.0.0/24  # Se define la subred fija

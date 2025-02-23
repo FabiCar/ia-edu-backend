@@ -2,6 +2,7 @@ import axios from "axios";
 import { promptRules } from "./promtRules";
 import { normalizeText } from "./normalizeText";
 import redisClient from "../infraestructure/redisClient";
+import { convertTextToSpeech } from "./convertTextToSpeech";
 const IA_URI = "http://chatbot-ia-model:11434";
 
 const callIAModel = async (ctx: string, strFormat: string, prompt: string) => {
@@ -20,10 +21,13 @@ const callIAModel = async (ctx: string, strFormat: string, prompt: string) => {
     stream: false
   });
 
-  console.log(">> Response >>>", response.data);
-  console.log(">> Response >>>", strFormat);
-  await redisClient.set(normalizeText(prompt), response?.data?.response);
-  return response?.data?.response;
+  const audioFilename = `response_${Date.now()}.mp3`;
+
+  console.log(">>> CREATE AUDIO ++> ", response?.data?.response)
+
+  const audioPath = await convertTextToSpeech(response.data?.response, audioFilename);
+  await redisClient.set(normalizeText(prompt), JSON.stringify({message: response?.data?.response, audio: audioPath}));
+  return { message: response?.data?.response, audio: audioPath}
 }
 
 
@@ -65,11 +69,10 @@ export const getOllamaResponse = async (prompt: string, characterData: any): Pro
       });
       if (formatContext) {
         // csonulto cache si existe retorno si no ejecuto ollama y actualizo cache con nuevo contexto
-        console.log(">> format context: ::", formatContext)
         const cachedResponse = await redisClient.get(normalizeText(prompt));
         if (cachedResponse) {
           console.log("✅ Respuesta obtenida de Redis")
-          return cachedResponse
+          return JSON.parse(cachedResponse)
         } else {
           return await callIAModel(context, formatContext, prompt)
         }

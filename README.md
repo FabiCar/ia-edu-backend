@@ -85,10 +85,6 @@ sequenceDiagram
     React->>User: Plays audio
 ```
 
-```mermaid
-shora 
-```
-
 ## Code Explanation
 
 ### Backend Implementation

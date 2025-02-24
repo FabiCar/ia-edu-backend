@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y ffmpeg
 WORKDIR /app
 
 COPY package.json package-lock.json ./
+COPY public ./
 
 RUN npm install
 

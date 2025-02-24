@@ -4,6 +4,7 @@ services:
   chatbot-db:
     image: mongo:latest
     container_name: chatbot-db
+    restart: always
     ports:
       - "27017:27017"
     volumes:
@@ -15,6 +16,7 @@ services:
   ollama:
     image: ollama/ollama:latest
     container_name: chatbot-ia-model
+    restart: always
     ports:
       - "11434:11434"
     volumes:
@@ -37,6 +39,7 @@ services:
   chatbot-core-bff:
     build: .
     container_name: chatbot-core-bff
+    restart: always
     ports:
       - "3000:3000"
     depends_on:

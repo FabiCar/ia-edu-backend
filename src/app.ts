@@ -25,7 +25,7 @@ try {
     mongoose.connect("mongodb://chatbot-db:27017/chatbot", {})
         .then(() => {
             console.log("DB connected !!!")
-            //character.insertMany(exampleData, { ordered: false });
+            character.insertMany(exampleData, { ordered: false });
             console.log(">>> Insert data succesfully << !!!")
         })
         .catch((err) => console.log("Error connect DB!!", err));

@@ -12,6 +12,21 @@ services:
       chatbot-network:
         ipv4_address: 172.19.0.2  # IP fija para MongoDB
 
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: chatbot-db
+      ME_CONFIG_BASICAUTH: "false"
+    networks:
+      chatbot-network:
+        ipv4_address: 172.19.0.3  # IP fija para Mongo Express
+    depends_on:
+      - chatbot-db
+
   ollama:
     image: ollama/ollama:latest
     container_name: chatbot-ia-model
